@@ -3,26 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>So Miyagawaのテキスト一括変換アプリ</title>
+    <title>Modern Text Replacement App | モダンテキスト置換アプリ</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP&family=Noto+Sans+Coptic&display=swap');
-        
         :root {
-            --bg-color: #f0f4f8;
+            --bg-color: #1a1a2e;
+            --text-color: #e2e2e2;
+            --accent-color: #0f3460;
+            --highlight-color: #16213e;
+            --button-color: #e94560;
+        }
+        :root.light-mode {
+            --bg-color: #f0f0f0;
             --text-color: #333333;
             --accent-color: #3498db;
             --highlight-color: #ffffff;
             --button-color: #2980b9;
         }
-        :root.dark-mode {
-            --bg-color: #1a202c;
-            --text-color: #e2e8f0;
-            --accent-color: #4299e1;
-            --highlight-color: #2d3748;
-            --button-color: #63b3ed;
-        }
         body {
-            font-family: 'Noto Sans JP', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             max-width: 800px;
@@ -57,8 +55,8 @@
             padding: 10px;
             margin-top: 10px;
             border-radius: 5px;
-            border: 1px solid var(--accent-color);
-            background-color: var(--bg-color);
+            border: none;
+            background-color: var(--accent-color);
             color: var(--text-color);
             font-size: 16px;
         }
@@ -68,7 +66,7 @@
         }
         button {
             background-color: var(--button-color);
-            color: var(--highlight-color);
+            color: var(--text-color);
             border: none;
             padding: 10px 20px;
             font-size: 18px;
@@ -91,7 +89,6 @@
         }
         .drop-zone.highlight {
             background-color: var(--accent-color);
-            color: var(--highlight-color);
         }
         .hidden {
             display: none;
@@ -101,43 +98,38 @@
             font-style: italic;
         }
         .toggle-button {
+            position: absolute;
+            top: 10px;
             padding: 5px 10px;
             border-radius: 5px;
             cursor: pointer;
             background-color: var(--accent-color);
-            color: var(--highlight-color);
+            color: var(--text-color);
             border: none;
-            margin-right: 5px;
         }
-        #languageButtons {
-            text-align: right;
-            margin-bottom: 10px;
+        #languageToggle {
+            right: 10px;
         }
-        .ar {
-            direction: rtl;
-            font-family: 'Noto Sans Arabic', sans-serif;
+        #themeToggle {
+            right: 100px;
         }
-        .ar .toggle-button, .ar #themeToggle {
-            float: left;
-        }
-        .cop {
-            font-family: 'Noto Sans Coptic', sans-serif;
+        .upload-button {
+            display: inline-block;
+            margin-top: 10px;
+            background-color: var(--accent-color);
+            color: var(--text-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="languageButtons">
-        <button class="toggle-button" onclick="setLanguage('ja')">日本語</button>
-        <button class="toggle-button" onclick="setLanguage('en')">English</button>
-        <button class="toggle-button" onclick="setLanguage('de')">Deutsch</button>
-        <button class="toggle-button" onclick="setLanguage('ar')">العربية</button>
-        <button class="toggle-button" onclick="setLanguage('la')">Latina</button>
-        <button class="toggle-button" onclick="setLanguage('cop')">ⲙⲉⲧⲣⲉⲙⲛ̀ⲭⲏⲙⲓ</button>
-        <button id="themeToggle" class="toggle-button" onclick="toggleTheme()">🌙</button>
-    </div>
-    <h1 id="appTitle">So Miyagawaのテキスト一括変換アプリ</h1>
+    <button id="languageToggle" class="toggle-button" onclick="toggleLanguage()">English</button>
+    <button id="themeToggle" class="toggle-button" onclick="toggleTheme()">🌙</button>
+    <h1 id="appTitle">モダンテキスト置換アプリ</h1>
     <div class="container">
-        <h2 id="step1">1. 変換したいテキストファイルを選択:</h2>
+        <h2 id="step1">1. テキストファイルを選択:</h2>
         <div id="textDropZone" class="drop-zone">
             <span id="textDropInstruction">ファイルをドラッグ＆ドロップ、またはクリックして選択</span>
             <input type="file" id="textFileInput" accept=".txt" class="hidden">
@@ -145,120 +137,63 @@
         <div id="textFileName" class="file-name"></div>
     </div>
     <div class="container">
-        <h2 id="step2">2. 変換ルールを入力またはアップロード:</h2>
-        <textarea id="conversionRules" placeholder="変換前:変換後
+        <h2 id="step2">2. 置換リストを入力またはアップロード:</h2>
+        <textarea id="replacementList" placeholder="古い文字:新しい文字
 例:
-おはよう:Good morning
-こんにちは:Hello
-さようなら:Goodbye"></textarea>
-        <div id="rulesDropZone" class="drop-zone">
-            <span id="rulesDropInstruction">変換ルールファイルをドラッグ＆ドロップ、またはクリックして選択</span>
-            <input type="file" id="rulesFileInput" accept=".txt" class="hidden">
+あ:ア
+い:イ
+う:ウ"></textarea>
+        <div id="replacementDropZone" class="drop-zone">
+            <span id="replacementDropInstruction">置換リストファイルをドラッグ＆ドロップ、またはクリックして選択</span>
+            <input type="file" id="replacementFileInput" accept=".txt" class="hidden">
         </div>
-        <div id="rulesFileName" class="file-name"></div>
+        <div id="replacementFileName" class="file-name"></div>
     </div>
-    <button id="processButton" onclick="processFile()">変換して出力</button>
+    <button id="processButton" onclick="processFile()">置換して出力</button>
 
     <script>
         const translations = {
             ja: {
-                appTitle: "So Miyagawaのテキスト一括変換アプリ",
-                step1: "1. 変換したいテキストファイルを選択:",
+                appTitle: "モダンテキスト置換アプリ",
+                step1: "1. テキストファイルを選択:",
                 textDropInstruction: "ファイルをドラッグ＆ドロップ、またはクリックして選択",
-                step2: "2. 変換ルールを入力またはアップロード:",
-                rulesDropInstruction: "変換ルールファイルをドラッグ＆ドロップ、またはクリックして選択",
-                processButton: "変換して出力",
+                step2: "2. 置換リストを入力またはアップロード:",
+                replacementDropInstruction: "置換リストファイルをドラッグ＆ドロップ、またはクリックして選択",
+                processButton: "置換して出力",
                 fileSelected: "選択されたファイル: ",
-                noFileAlert: "テキストファイルを選択してください。",
-                noRulesAlert: "変換ルールを入力するか、ファイルをアップロードしてください。",
+                noFileAlert: "ファイルを選択してください。",
+                noReplacementAlert: "置換リストを入力するか、ファイルをアップロードしてください。",
+                languageToggle: "English",
                 lightMode: "☀️",
-                darkMode: "🌙",
-                placeholder: "変換前:変換後\n例:\nおはよう:Good morning\nこんにちは:Hello\nさようなら:Goodbye"
+                darkMode: "🌙"
             },
             en: {
-                appTitle: "So Miyagawa's Bulk Text Conversion App",
-                step1: "1. Select a text file to convert:",
+                appTitle: "Modern Text Replacement App",
+                step1: "1. Select a text file:",
                 textDropInstruction: "Drag & drop a file here or click to select",
-                step2: "2. Enter or upload conversion rules:",
-                rulesDropInstruction: "Drag & drop a conversion rules file here or click to select",
-                processButton: "Convert and Output",
+                step2: "2. Enter or upload replacement list:",
+                replacementDropInstruction: "Drag & drop a replacement list file here or click to select",
+                processButton: "Replace and Output",
                 fileSelected: "Selected file: ",
-                noFileAlert: "Please select a text file.",
-                noRulesAlert: "Please enter conversion rules or upload a file.",
+                noFileAlert: "Please select a file.",
+                noReplacementAlert: "Please enter a replacement list or upload a file.",
+                languageToggle: "日本語",
                 lightMode: "☀️",
-                darkMode: "🌙",
-                placeholder: "before:after\nExample:\nHello:Bonjour\nGoodbye:Au revoir\nThank you:Merci"
-            },
-            de: {
-                appTitle: "So Miyagawas Massen-Textkonvertierungs-App",
-                step1: "1. Wählen Sie eine zu konvertierende Textdatei aus:",
-                textDropInstruction: "Datei hier ablegen oder zum Auswählen klicken",
-                step2: "2. Konvertierungsregeln eingeben oder hochladen:",
-                rulesDropInstruction: "Regelndatei hier ablegen oder zum Auswählen klicken",
-                processButton: "Konvertieren und Ausgeben",
-                fileSelected: "Ausgewählte Datei: ",
-                noFileAlert: "Bitte wählen Sie eine Textdatei aus.",
-                noRulesAlert: "Bitte geben Sie Konvertierungsregeln ein oder laden Sie eine Datei hoch.",
-                lightMode: "☀️",
-                darkMode: "🌙",
-                placeholder: "vorher:nachher\nBeispiel:\nHallo:Guten Tag\nAuf Wiedersehen:Tschüss\nDanke:Vielen Dank"
-            },
-            ar: {
-                appTitle: "تطبيق التحويل الجماعي للنصوص لسو مياغاوا",
-                step1: "١. اختر ملف النص المراد تحويله:",
-                textDropInstruction: "اسحب وأفلت الملف هنا أو انقر للاختيار",
-                step2: "٢. أدخل قواعد التحويل أو قم بتحميلها:",
-                rulesDropInstruction: "اسحب وأفلت ملف قواعد التحويل هنا أو انقر للاختيار",
-                processButton: "تحويل وإخراج",
-                fileSelected: "الملف المختار: ",
-                noFileAlert: "الرجاء اختيار ملف نصي.",
-                noRulesAlert: "الرجاء إدخال قواعد التحويل أو تحميل ملف.",
-                lightMode: "☀️",
-                darkMode: "🌙",
-                placeholder: "قبل:بعد\nمثال:\nمرحبا:أهلا\nوداعا:مع السلامة\nشكرا:شكرا جزيلا"
-            },
-            la: {
-                appTitle: "Applicatio Conversionis Textus Massae So Miyagawa",
-                step1: "1. Elige documentum textus convertendum:",
-                textDropInstruction: "Trahe et demitte documentum hic vel clicca ad eligendum",
-                step2: "2. Intra vel summitte regulas conversionis:",
-                rulesDropInstruction: "Trahe et demitte documentum regularum hic vel clicca ad eligendum",
-                processButton: "Converte et Emitte",
-                fileSelected: "Documentum electum: ",
-                noFileAlert: "Quaeso, elige documentum textus.",
-                noRulesAlert: "Quaeso, intra regulas conversionis vel summitte documentum.",
-                lightMode: "☀️",
-                darkMode: "🌙",
-                placeholder: "ante:post\nExemplum:\nSalve:Ave\nVale:Valete\nGratias:Gratias maximas"
-            },
-            cop: {
-                appTitle: "ⲡⲓⲁⲡⲡⲗⲓⲕⲁⲥⲓⲟⲛ ⲛ̀ϣⲓⲃϯ ⲛ̀ϩⲁⲛⲙⲏϣ ⲛ̀ⲥϧⲁⲓ ⲛ̀ⲧⲉ ⲥⲟ ⲙⲓⲁⲅⲁⲩⲁ",
-                step1: "ⲁ̅. ⲥⲱⲧⲡ ⲛ̀ⲟⲩϫⲱⲙ ⲛ̀ⲥϧⲁⲓ ⲉϣⲓⲃϯ ⲙⲙⲟϥ:",
-                textDropInstruction: "ϩⲓⲟⲩⲓ̀ ⲙ̀ⲡⲓϫⲱⲙ ⲙ̀ⲡⲁⲓⲙⲁ ⲓⲉ ⲕⲗⲓⲕ ⲉ̀ⲥⲟⲧⲡϥ",
-                step2: "ⲃ̅. Ϯϧⲟⲩⲛ ⲓⲉ ϣⲉ ⲉ̀ϩⲣⲏⲓ ⲛ̀ⲛⲓⲕⲁⲛⲱⲛ ⲛ̀ϣⲓⲃϯ:",
-                rulesDropInstruction: "ϩⲓⲟⲩⲓ̀ ⲙ̀ⲡⲓϫⲱⲙ ⲛ̀ⲕⲁⲛⲱⲛ ⲙ̀ⲡⲁⲓⲙⲁ ⲓⲉ ⲕⲗⲓⲕ ⲉ̀ⲥⲟⲧⲡϥ",
-                processButton: "ϣⲓⲃϯ ⲟⲩprocessButton: "ϣⲓⲃϯ ⲟⲩⲟϩ ϩⲓⲟⲩⲓ̀ ⲉ̀ⲃⲟⲗ",
-                fileSelected: "ⲡⲓϫⲱⲙ ⲉⲧⲁⲩⲥⲟⲧⲡϥ: ",
-                noFileAlert: "ⲁⲣⲓⲡⲁⲓⲙⲉⲩⲓ̀ ⲥⲱⲧⲡ ⲛ̀ⲟⲩϫⲱⲙ ⲛ̀ⲥϧⲁⲓ.",
-                noRulesAlert: "ⲁⲣⲓⲡⲁⲓⲙⲉⲩⲓ̀ Ϯϧⲟⲩⲛ ⲛ̀ϩⲁⲛⲕⲁⲛⲱⲛ ⲛ̀ϣⲓⲃϯ ⲓⲉ ϣⲉ ⲉ̀ϩⲣⲏⲓ ⲛ̀ⲟⲩϫⲱⲙ.",
-                lightMode: "☀️",
-                darkMode: "🌙",
-                placeholder: "ϧⲁϫⲱϥ:ⲙⲉⲛⲉⲛⲥⲱϥ\nⲡⲁⲣⲁⲇⲓⲅⲙⲁ:\nⲭⲉⲣⲉ:ⲛⲟϥⲣⲓ\nⲟⲩϫⲁⲓ:ⲛⲁⲛⲉ ϫⲓⲛⲓ\nϣⲉⲡϩⲙⲟⲧ:ϣⲉⲡϩⲙⲟⲧ ⲉⲙⲁϣⲱ"
+                darkMode: "🌙"
             }
         };
 
         let currentLanguage = 'ja';
-        let isDarkMode = false;
+        let isDarkMode = true;
 
-        function setLanguage(lang) {
-            currentLanguage = lang;
-            document.body.className = lang;
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ja' ? 'en' : 'ja';
             updateLanguage();
         }
 
         function toggleTheme() {
             isDarkMode = !isDarkMode;
-            document.documentElement.classList.toggle('dark-mode');
+            document.documentElement.classList.toggle('light-mode');
             updateThemeButton();
         }
 
@@ -272,13 +207,17 @@
             document.getElementById('step1').textContent = translations[currentLanguage].step1;
             document.getElementById('textDropInstruction').textContent = translations[currentLanguage].textDropInstruction;
             document.getElementById('step2').textContent = translations[currentLanguage].step2;
-            document.getElementById('rulesDropInstruction').textContent = translations[currentLanguage].rulesDropInstruction;
+            document.getElementById('replacementDropInstruction').textContent = translations[currentLanguage].replacementDropInstruction;
             document.getElementById('processButton').textContent = translations[currentLanguage].processButton;
+            document.getElementById('languageToggle').textContent = translations[currentLanguage].languageToggle;
             
-            document.getElementById('conversionRules').placeholder = translations[currentLanguage].placeholder;
+            const placeholder = currentLanguage === 'ja' ? 
+                "古い文字:新しい文字\n例:\nあ:ア\nい:イ\nう:ウ" : 
+                "old character:new character\nExample:\na:A\nb:B\nc:C";
+            document.getElementById('replacementList').placeholder = placeholder;
 
             updateFileName('textFileName');
-            updateFileName('rulesFileName');
+            updateFileName('replacementFileName');
 
             updateThemeButton();
         }
@@ -325,36 +264,36 @@
 
         async function processFile() {
             const textFileInput = document.getElementById('textFileInput');
-            const conversionRules = document.getElementById('conversionRules').value;
-            const rulesFileInput = document.getElementById('rulesFileInput');
+            const replacementList = document.getElementById('replacementList').value;
+            const replacementFileInput = document.getElementById('replacementFileInput');
 
             if (!textFileInput.files.length) {
                 alert(translations[currentLanguage].noFileAlert);
                 return;
             }
 
-            if (!conversionRules && !rulesFileInput.files.length) {
-                alert(translations[currentLanguage].noRulesAlert);
+            if (!replacementList && !replacementFileInput.files.length) {
+                alert(translations[currentLanguage].noReplacementAlert);
                 return;
             }
 
             const textFile = textFileInput.files[0];
             let content = await readFile(textFile);
 
-            let rules;
-            if (rulesFileInput.files.length) {
-                const rulesFile = rulesFileInput.files[0];
-                const rulesContent = await readFile(rulesFile);
-                rules = parseRules(rulesContent);
+            let replacements;
+            if (replacementFileInput.files.length) {
+                const replacementFile = replacementFileInput.files[0];
+                const replacementContent = await readFile(replacementFile);
+                replacements = parseReplacements(replacementContent);
             } else {
-                rules = parseRules(conversionRules);
+                replacements = parseReplacements(replacementList);
             }
 
-            for (const [before, after] of rules) {
-                content = content.split(before).join(after);
+            for (const [oldChar, newChar] of replacements) {
+                content = content.split(oldChar).join(newChar);
             }
 
-            downloadFile(content, 'converted_text.txt');
+            downloadFile(content, 'replaced_text.txt');
         }
 
         function readFile(file) {
@@ -366,12 +305,12 @@
             });
         }
 
-        function parseRules(rulesText) {
-            return rulesText.split('\n')
+        function parseReplacements(list) {
+            return list.split('\n')
                 .filter(line => line.includes(':'))
                 .map(line => {
-                    const [before, after] = line.split(':').map(s => s.trim());
-                    return [before, after];
+                    const [oldChar, newChar] = line.split(':').map(s => s.trim());
+                    return [oldChar, newChar];
                 });
         }
 
@@ -389,7 +328,7 @@
 
         // Initialize
         setupDropZone('textDropZone', 'textFileInput', 'textFileName');
-        setupDropZone('rulesDropZone', 'rulesFileInput', 'rulesFileName');
+        setupDropZone('replacementDropZone', 'replacementFileInput', 'replacementFileName');
         updateLanguage();
         updateThemeButton();
     </script>
